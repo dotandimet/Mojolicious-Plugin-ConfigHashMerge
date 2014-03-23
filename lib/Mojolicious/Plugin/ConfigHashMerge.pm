@@ -3,7 +3,7 @@ use Mojo::Base 'Mojolicious::Plugin::Config';
 use Hash::Merge::Simple qw( merge );
 use File::Spec::Functions 'file_name_is_absolute';
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub register {
   my ($self, $app, $conf) = @_;
@@ -50,39 +50,68 @@ Mojolicious::Plugin::ConfigHashMerge - Perlish Configuration, with merging of de
     foo         => "bar",
     watch_dirs  => {
       music => app->home->rel_dir('music'),
-      ebooks => app->home->rel_dir('ebooks'),
-      movies => app->home->rel_dir('movies')
+      ebooks => app->home->rel_dir('ebooks')
     }
   };
 
   # Mojolicious
-  my $config = $self->plugin('ConfigHashMerge');
+  my $config = $self->plugin('ConfigHashMerge', { options... } );
 
   # Mojolicious::Lite
   plugin ConfigHashMerge =>
   {
     default =>
-    { 
-      watch_dirs => { 
+    {
+      watch_dirs => {
         downloads => app->home->rel_dir('downloads')
       }
     },
     file => 'myapp.conf' # will be loaded anyway
   };
-  say $_ for (sort keys %{app->config->{watch_dirs}}); # downloads ebooks movies music
-
+  say $_ for (sort keys %{app->config->{watch_dirs}});
+  # will print:
+  # downloads
+  # ebooks
+  # music
 
 =head1 DESCRIPTION
 
-L<Mojolicious::Plugin::ConfigHashMerge> is a Perl-ish configuration plugin, identical 
-to L<Mojolicious::Plugin::Config>, except that it will merge config file and defaults using
-L<Hash::Merge::Simple>. This allows merging of deeply-nested config options.
+L<Mojolicious::Plugin::ConfigHashMerge> behaves B<exactly> like the standard plugin
+L<Mojolicious::Plugin::Config>, except that it uses L<Hash::Merge::Simple> to merge
+the defaults with the contents of the config file, instead of simply merging the
+config hashes as flattened lists. This allows merging of deeply-nested config options.
+
+Specifically, the only change introduced in this plugin is to replace these two lines:
+
+   $config = {%$config, %{$self->load($mode, $conf, $app)}} if $mode;
+   $config = {%{$conf->{default}}, %$config} if $conf->{default};
+
+with these:
+
+   $config = merge($config, $self->load($mode, $conf, $app)) if $mode;
+   $config = merge($conf->{default}, $config) if $conf->{default};
+
+So that if your defaults look like this:
+
+  { optA => 42, optB => { victor => 1 }, optC => [2, 7, 8] }
+
+And your config file looks like this:
+
+  { optB => { alpha => 3 }, optC => 7 }
+
+The merged config will look like this:
+
+  { optA => 42, optB => { alpha => 3, victor => 1 }, optC => 7 }
+
+Instead of like this (with the regular Config plugin):
+
+  { optA => 42, optB => { alpha => 3 }, optC => 7 }
 
 See L<Mojolicious::Plugin::Config> for more.
 
 =head1 OPTIONS
 
-L<Mojolicious::Plugin::ConfigHashMerge> supports all options supported by 
+L<Mojolicious::Plugin::ConfigHashMerge> supports all options supported by
 L<Mojolicious::Plugin::Config>.
 
 =head1 METHODS
