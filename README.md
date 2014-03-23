@@ -36,11 +36,11 @@ Mojolicious::Plugin::ConfigHashMerge - Perlish Configuration, with merging of de
 # DESCRIPTION
 
 [Mojolicious::Plugin::ConfigHashMerge](https://metacpan.org/pod/Mojolicious::Plugin::ConfigHashMerge) behaves __exactly__ like the standard plugin
-[Mojolicious::Plugin::Config](https://metacpan.org/pod/Mojolicious::Plugin::Config), except that it uses [Hash::Merge::Simple](https://metacpan.org/pod/Hash::Merge::Simple) to merge
-the defaults with the contents of the config file, instead of simply merging the
-config hashes as flattened lists. This allows merging of deeply-nested config options.
+[Mojolicious::Plugin::Config](https://metacpan.org/pod/Mojolicious::Plugin::Config), except that it merges the defaults with the contents
+of the config file using [Hash::Merge::Simple](https://metacpan.org/pod/Hash::Merge::Simple) instead of flattening the two hashes
+into lists. This allows merging of deeply-nested config options.
 
-Specifically, the only change introduced in this plugin is to replace these two lines:
+The only change from the standard Config plugin is the replacement of these two lines:
 
     $config = {%$config, %{$self->load($mode, $conf, $app)}} if $mode;
     $config = {%{$conf->{default}}, %$config} if $conf->{default};
@@ -58,13 +58,16 @@ And your config file looks like this:
 
     { optB => { alpha => 3 }, optC => 7 }
 
-The merged config will look like this:
+And your mode-specific config file looks like this:
 
-    { optA => 42, optB => { alpha => 3, victor => 1 }, optC => 7 }
+    { optB => { test => 1 } }
+  The merged config will look like this:
+
+    { optA => 42, optB => { alpha => 3, test => 1, victor => 1 }, optC => 7 }
 
 Instead of like this (with the regular Config plugin):
 
-    { optA => 42, optB => { alpha => 3 }, optC => 7 }
+    { optA => 42, optB => { test => 1 }, optC => 7 }
 
 See [Mojolicious::Plugin::Config](https://metacpan.org/pod/Mojolicious::Plugin::Config) for more.
 
